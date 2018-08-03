@@ -2,9 +2,9 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
 <html lang="en">
-    <head></head>
-    <h2>Add User</h2>
+	<%@ include file="header.jspf" %>
+    <h2>Database initialization</h2>
     <body>
-    Done.
+     Done.
     </body>
 </html>

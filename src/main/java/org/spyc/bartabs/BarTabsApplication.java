@@ -39,7 +39,7 @@ public class BarTabsApplication {
     PaymentEventHandler paymentEventHandler() {
         return new PaymentEventHandler();
     }
-    
+        
     @Bean
     protected ServletContextListener listener() {
         return new ServletContextListener() {

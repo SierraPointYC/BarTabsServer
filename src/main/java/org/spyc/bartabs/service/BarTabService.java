@@ -27,8 +27,10 @@ import org.spyc.bartabs.domain.Transaction;
 import org.spyc.bartabs.domain.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class BarTabService {
@@ -49,13 +51,91 @@ public class BarTabService {
     @Autowired
     private PaymentRepository paymentRepository;
     
-    public List<String> getAllUsers() {
-    	List<String> nameList = new ArrayList<String>();
-        Iterator<Name> names = nameRepository.findAll().iterator();
-        while(names.hasNext()){
-            nameList.add(names.next().getValue());
-        }
-        return nameList;
+    public List<User> getAllUsers() {
+    	Iterable<User> it = userRepository.findAll();
+    	List<User> users = new ArrayList<User>();
+    	for (User user : it) {
+    		users.add(user);
+    	}
+        return users;
+    }
+
+    public User getUser(long id) {
+    	User user = userRepository.findOne(id);
+        return user;
+    }    
+    
+    public void updateUser(User user) {
+    	userRepository.save(user);
+    }
+    
+    public List<Transaction> getTransactions() {
+    	Iterable<Transaction> it = transactionRepository.findAll();
+    	List<Transaction> transactions = new ArrayList<Transaction>();
+    	for (Transaction transaction : it) {
+    		transactions.add(transaction);   		
+    	}
+        return transactions;
+    }    
+
+    public List<Payment> getPayments() {
+    	Iterable<Payment> it = paymentRepository.findAll();
+    	List<Payment> payments = new ArrayList<Payment>();
+    	for (Payment payment : it) {
+    		payments.add(payment);
+    	}
+        return payments;
+    }    
+    
+    public List<Item> getItems() {
+    	Iterable<Item> it = itemRepository.findAll();
+    	List<Item> items = new ArrayList<Item>();
+    	for (Item item : it) {
+    		items.add(item);
+    	}
+        return items;
+    }        
+    
+    public BarTab getBarTab(long userId) {
+    	User user = userRepository.findOne(userId);
+    	Iterable<Transaction> it = transactionRepository.findByStatusAndUserId(Transaction.Status.UNPAID, userId);
+    	BarTab barTab = null;
+    	for (Transaction transaction : it) {
+    		if (barTab == null) {
+    			barTab = new BarTab(user, transaction.getOpenDate());
+    		}
+    		barTab.addToItemCount(transaction.getItem(), transaction.getItems());   
+    		barTab.addToItemTotal(transaction.getItem(), transaction.getAmount());   
+    		barTab.incTotalTransactions();
+    		barTab.addToTotalAmount(transaction.getAmount());
+    		barTab.setLastTime(transaction.getOpenDate());
+    	}
+    	return barTab;
+    }
+    
+    public List<BarTab> getBarTabs() {
+    	Iterable<Transaction> it = transactionRepository.findByStatus(Transaction.Status.UNPAID);
+    	List<String> users = new ArrayList<String>();
+    	Map<String, BarTab> tabMap = new HashMap<String, BarTab>();
+    	for (Transaction transaction : it) {
+    		String name = transaction.getUser().getName();
+    		BarTab tab = tabMap.get(name);
+    		if (tab == null) {
+    			users.add(name);
+    			tab = new BarTab(transaction.getUser(), transaction.getOpenDate());
+    			tabMap.put(name, tab);
+    		}
+    		tab.addToItemCount(transaction.getItem(), transaction.getItems());   
+    		tab.addToItemTotal(transaction.getItem(), transaction.getAmount());   
+    		tab.incTotalTransactions();
+    		tab.addToTotalAmount(transaction.getAmount());
+    		tab.setLastTime(transaction.getOpenDate());
+    	}
+    	List<BarTab> tabs = new ArrayList<BarTab>(tabMap.size());
+    	for (String name : users) {
+    		tabs.add(tabMap.get(name));
+    	}
+        return tabs;    	
     }
     
     public String exportDB() {
@@ -104,7 +184,7 @@ public class BarTabService {
         }                
         return out.toString();
     }
-    
+        
     public void addDefaultUsers() {
     	User user = new User();
     	user.setName("Martin Tali");
