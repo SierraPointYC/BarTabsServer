@@ -62,7 +62,7 @@ public class SecSecurityConfig extends WebSecurityConfigurerAdapter {
         http
           .authorizeRequests()
           .antMatchers("/admin/login*").permitAll()
-          .antMatchers("/api/*").anonymous()
+          .antMatchers("/api/**").anonymous()
           .antMatchers("/css/*").permitAll()
           .antMatchers("/vendor/**").permitAll()
           .antMatchers("/js/*").permitAll()
