@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 import org.spyc.bartabs.domain.Department;
 import org.spyc.bartabs.domain.Item;
 import org.spyc.bartabs.domain.ItemType;
-import org.spyc.bartabs.domain.Name;
 import org.spyc.bartabs.domain.Payment;
 import org.spyc.bartabs.domain.Transaction;
 import org.spyc.bartabs.domain.User;
@@ -34,10 +33,6 @@ import java.util.Map;
 
 @Component
 public class BarTabService {
-
-
-    @Autowired
-    private NameRepository nameRepository;
 
     @Autowired
     private UserRepository userRepository;
