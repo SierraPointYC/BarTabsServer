@@ -1,4 +1,6 @@
-spring-boot-tomcat-mysql-app
-============================
+Sierra Point Yacht Club Bar Tab Server
+======================================
 
-a sample spring-boot app using tomcat and MySql
+Simple Springboot application to provide REST API for bar tab application and managmeent console.
+Uses MySQL Database through JPA and Tomcat application server.
+
