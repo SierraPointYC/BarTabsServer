@@ -104,8 +104,13 @@ public class BarTabController {
     String postData(@RequestParam("file") MultipartFile file, Model model) {
     	try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
-			for (int i = 0; i < 5; i++) {
+			service.cleanDatabase();
+			while(true) {
 				String line = reader.readLine();
+				if (line == null) {
+					break;
+				}
+				service.importLine(line);
 				System.out.println(line);
 			}
 		} catch (IOException e) {

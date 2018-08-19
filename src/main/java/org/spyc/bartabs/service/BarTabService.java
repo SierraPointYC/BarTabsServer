@@ -22,10 +22,14 @@ import org.spyc.bartabs.domain.Department;
 import org.spyc.bartabs.domain.Item;
 import org.spyc.bartabs.domain.ItemType;
 import org.spyc.bartabs.domain.Payment;
+import org.spyc.bartabs.domain.Payment.PaymentMethod;
 import org.spyc.bartabs.domain.Transaction;
 import org.spyc.bartabs.domain.User;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -34,7 +38,19 @@ import java.util.Map;
 @Component
 public class BarTabService {
 
-    @Autowired
+    private static final String TRANSACTION = "Transaction";
+
+	private static final String PAYMENT = "Payment";
+
+	private static final String SEPARATOR = ",";
+
+	private static final String ITEM = "Item";
+
+	private static final String USER = "User";
+
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.0");
+	
+	@Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -137,45 +153,46 @@ public class BarTabService {
         Iterator<User> users = userRepository.findAll().iterator();
         StringBuilder out = new StringBuilder();
         while(users.hasNext()){
-            out.append("User,");
+            out.append(USER).append(SEPARATOR);
             User u = users.next();
-            out.append(u.getId()).append(",");
-            out.append(u.getName()).append(",");
-            out.append(u.getPin()).append(System.lineSeparator());          
+            out.append(u.getId()).append(SEPARATOR);
+            out.append(u.getName()).append(SEPARATOR);
+            out.append(u.getPin()).append(SEPARATOR);
+            out.append(u.getTag()).append(System.lineSeparator());          
         }
         Iterator<Item> items = itemRepository.findAll().iterator();
         while(items.hasNext()){
-            out.append("Item,");
+            out.append(ITEM).append(SEPARATOR);
             Item i = items.next();
-            out.append(i.getId()).append(",");
-            out.append(i.getType().toString()).append(",");
-            out.append(i.getDepartment().toString()).append(",");            
+            out.append(i.getId()).append(SEPARATOR);
+            out.append(i.getType().toString()).append(SEPARATOR);
+            out.append(i.getDepartment().toString()).append(SEPARATOR);            
             out.append(i.getCost()).append(System.lineSeparator());            
         }
         Iterator<Payment> payments = paymentRepository.findAll().iterator();
         while(payments.hasNext()){
-            out.append("Payment,");
+            out.append(PAYMENT).append(SEPARATOR);
             Payment p = payments.next();
-            out.append(p.getId()).append(",");
-            out.append(p.getMethod().toString()).append(",");
-            out.append(p.getDepartment().toString()).append(",");            
-            out.append(p.getAmount()).append(",");            
-            out.append(p.getDate()).append(",");
-            out.append(p.getUser().getId()).append(System.lineSeparator());           
+            out.append(p.getId()).append(SEPARATOR);
+            out.append(p.getMethod().toString()).append(SEPARATOR);
+            out.append(p.getDepartment().toString()).append(SEPARATOR);            
+            out.append(p.getAmount()).append(SEPARATOR);            
+            out.append(p.getDate()).append(SEPARATOR);
+            out.append(p.getUser().getName()).append(System.lineSeparator());           
         }        
         Iterator<Transaction> transactions = transactionRepository.findAll().iterator();
         while(transactions.hasNext()){
-            out.append("Transaction,");
+            out.append(TRANSACTION).append(SEPARATOR);
             Transaction t = transactions.next();
-            out.append(t.getId()).append(",");
-            out.append(t.getDepartment().toString()).append(",");
-            out.append(t.getItem().toString()).append(",");            
-            out.append(t.getItems()).append(",");
-            out.append(t.getAmount()).append(",");            
-            out.append(t.getUser().getId());           
-            out.append(t.getStatus().toString());           
-            out.append(t.getOpenDate()).append(",");
-            out.append(t.getCloseDate()).append(",").append(System.lineSeparator());
+            out.append(t.getId()).append(SEPARATOR);
+            out.append(t.getDepartment().toString()).append(SEPARATOR);
+            out.append(t.getItem().toString()).append(SEPARATOR);            
+            out.append(t.getItems()).append(SEPARATOR);
+            out.append(t.getAmount()).append(SEPARATOR);            
+            out.append(t.getUser().getName()).append(SEPARATOR);           
+            out.append(t.getStatus().toString()).append(SEPARATOR);           
+            out.append(t.getOpenDate()).append(SEPARATOR);
+            out.append(t.getCloseDate()).append(SEPARATOR).append(System.lineSeparator());
         }                
         return out.toString();
     }
@@ -249,4 +266,91 @@ public class BarTabService {
     	item.setDepartment(Department.FOOD);
     	itemRepository.save(item);
      }
+
+	public void importLine(String line) {
+		String[] tokens = line.split(SEPARATOR);
+		if (USER.equals(tokens[0])) {
+			importUser(tokens);
+			return;
+		}
+		if (ITEM.equals(tokens[0])) {
+			importItem(tokens);
+			return;
+		}
+		if (PAYMENT.equals(tokens[0])) {
+			importPayment(tokens);
+			return;
+		}
+		if (TRANSACTION.equals(tokens[0])) {
+			importTransaction(tokens);
+			return;
+		}				
+	}
+
+	private void importUser(String[] tokens) {
+    	User user = new User();
+    	user.setId(Long.valueOf(tokens[1]));
+    	user.setName(tokens[2]);
+    	user.setPin(tokens[3]);
+    	user.setTag(tokens[4]);
+    	userRepository.save(user);
+	}
+	
+	private void importItem(String[] tokens) {
+    	Item item = new Item();
+    	item.setId(Long.valueOf(tokens[1]));
+    	item.setType(ItemType.valueOf(tokens[2]));
+    	item.setDepartment(Department.valueOf(tokens[3]));
+    	item.setCost(Integer.valueOf(tokens[4]));
+    	itemRepository.save(item);
+	}
+	
+	private void importPayment(String[] tokens) {
+    	Payment payment = new Payment();
+    	payment.setId(Long.valueOf(tokens[1]));
+    	payment.setMethod(PaymentMethod.valueOf(tokens[2]));
+    	payment.setDepartment(Department.valueOf(tokens[3]));
+    	payment.setAmount(Integer.valueOf(tokens[4]));
+    	try {
+    		String date = tokens[5];
+    		if (!"null".equals(date)) {
+    			payment.setDate(dateFormat.parse(date));
+    		}
+ 		} catch (ParseException e) {
+			e.printStackTrace();
+		}    	
+    	payment.setUser(userRepository.findByName(tokens[6]));
+    	paymentRepository.save(payment);
+	}	
+
+	private void importTransaction(String[] tokens) {
+    	Transaction  payment = new Transaction();
+    	payment.setId(Long.valueOf(tokens[1]));
+    	payment.setDepartment(Department.valueOf(tokens[2]));
+    	payment.setItem(ItemType.valueOf(tokens[3]));
+    	payment.setItems(Integer.valueOf(tokens[4]));
+    	payment.setAmount(Integer.valueOf(tokens[5]));
+    	payment.setUser(userRepository.findByName(tokens[6]));
+    	payment.setStatus(Transaction.Status.valueOf(tokens[7]));
+    	try {
+    		String date = tokens[8];
+    		if (!"null".equals(date)) {
+    			payment.setOpenDate(dateFormat.parse(date));
+    		}
+    		date = tokens[9];
+    		if (!"null".equals(date)) {
+    			payment.setCloseDate(dateFormat.parse(date));
+    		}
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+    	transactionRepository.save(payment);
+	}	
+	
+	public void cleanDatabase() {
+		transactionRepository.deleteAll();
+		paymentRepository.deleteAll();
+		userRepository.deleteAll();
+		itemRepository.deleteAll();
+	}
 }
