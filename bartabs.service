@@ -1,0 +1,11 @@
+[Unit]
+Description=BarTabsServer
+After=syslog.target
+[Service]
+WorkingDirectory=/opt/spyc/BarTabsServer
+SyslogIdentifier=BarTabsServer
+ExecStart=/bin/bash -c "java -jar /opt/spyc/BarTabsServer/target/bar-tabs-server-1.0.0-SNAPSHOT.war"
+User=root
+Type=simple
+[Install]
+WantedBy=multi-user.target

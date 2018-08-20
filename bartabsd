@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# Startup script for the SPYC Bar Tabs server
+#
+# chkconfig: - 85 15
+# description: BarTabsServer
+# processname: tomcat
+# pidfile: /var/run/BarTabsServer.pid
+# config:
+#set -x
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+# Set Tomcat environment.
+JAVA_HOME=/usr/java/jdk
+#PATH=/usr/bin/java:$PATH
+BARTABS_SERVER=BarTabsServer
+BARTABS_USER=root
+if [ "$BARTABS_USER" = "changeme" ] ;
+then echo "User $BARTABS_USER is the default, please create a new one in order to configure jmeter!" && exit 0
+elif [ "`grep ^$BARTABS_USER: /etc/passwd|cut -d ":" -f1`" != "$BARTABS_USER" ];
+then echo "User $BARTABS_USER does not exist, please create it!" && exit 0
+fi
+BARTABS_HOME=/opt/spyc/BarTabsServer
+JAVA_PID=`ps ax --width=1000 | grep "[b]ar-tabs-server"|awk '{printf $1 ""}'`
+
+#export PATH=$PATH:/usr/bin:/usr/local/bin
+
+# See how we were called.
+case "$1" in
+  start)
+        # Start daemon.
+        [ -n "$JAVA_PID" ] && echo "$BARTABS_SERVER already started" && exit 0
+        echo -n "Starting $BARTABS_SERVER: "
+        runuser -l $BARTABS_USER -c "java -jar $BARTABS_HOME/target/bar-tabs-server-1.0.0-SNAPSHOT.war 2>&1 &"
+        RETVAL=$?
+        MODE="normal"
+        echo "$BARTABS_SERVER started in $MODE mode"
+        [ $RETVAL = 0 ] && touch /var/lock/subsys/$BARTABS_SERVER
+        ;;
+  stop)
+        # Stop daemons.
+        [ -z "$JAVA_PID" ] && echo "$BARTABS_SERVER already stopped" && exit 0
+        echo -n "Shutting down $BARTABS_SERVER: "
+        kill $JAVA_PID
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && rm -f /var/lock/subsys/$BARTABS_SERVER
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  condrestart)
+       [ -e /var/lock/subsys/$BARTABS_SERVER ] && $0 restart
+       ;;
+  status)
+        if [ -n "$JAVA_PID" ]; then
+                MODE="RUNNING pid $JAVA_PID"
+        else
+                MODE="STOPPED"
+        fi
+        echo "$BARTABS_SERVER is $MODE"
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit 0
